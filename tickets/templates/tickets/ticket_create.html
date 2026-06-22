@@ -1,0 +1,35 @@
+{% extends 'base.html' %}
+{% block title %}Создать заявку — HelpDesk{% endblock %}
+{% block content %}
+<div class="row justify-content-center">
+  <div class="col-lg-7">
+    <div class="d-flex align-items-center mb-3">
+      <a href="{% url 'ticket_list' %}" class="btn btn-sm btn-outline-secondary me-3">
+        <i class="bi bi-arrow-left"></i>
+      </a>
+      <h5 class="mb-0">Новая заявка</h5>
+    </div>
+    <div class="card p-4">
+      <form method="post">
+        {% csrf_token %}
+        {% for field in form %}
+        <div class="mb-3">
+          <label class="form-label fw-semibold">{{ field.label }}</label>
+          {{ field }}
+          {% for error in field.errors %}
+            <div class="text-danger small">{{ error }}</div>
+          {% endfor %}
+        </div>
+        {% endfor %}
+        <div class="alert alert-info small py-2">
+          <i class="bi bi-clock me-1"></i>
+          Дедлайн рассчитывается автоматически: критичный — 4ч, высокий — 8ч, средний — 24ч, низкий — 72ч.
+        </div>
+        <button type="submit" class="btn btn-primary w-100">
+          <i class="bi bi-send me-1"></i>Создать заявку
+        </button>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}

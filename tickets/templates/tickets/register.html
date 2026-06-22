@@ -1,0 +1,28 @@
+{% extends 'base.html' %}
+{% block title %}Регистрация — HelpDesk{% endblock %}
+{% block content %}
+<div class="row justify-content-center">
+  <div class="col-md-5 col-lg-4">
+    <div class="card p-4 mt-4">
+      <h5 class="mb-4 text-center">Регистрация</h5>
+      <form method="post">
+        {% csrf_token %}
+        {% for field in form %}
+          <div class="mb-3">
+            <label class="form-label">{{ field.label }}</label>
+            {{ field }}
+            {% for error in field.errors %}
+              <div class="text-danger small">{{ error }}</div>
+            {% endfor %}
+          </div>
+        {% endfor %}
+        <button type="submit" class="btn btn-success w-100">Зарегистрироваться</button>
+      </form>
+      <hr>
+      <p class="text-center text-muted mb-0">Уже есть аккаунт?
+        <a href="{% url 'login' %}">Войти</a>
+      </p>
+    </div>
+  </div>
+</div>
+{% endblock %}

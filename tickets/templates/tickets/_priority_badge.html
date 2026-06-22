@@ -1,0 +1,10 @@
+{% comment %}Usage: {% include 'tickets/_priority_badge.html' with priority=ticket.priority label=ticket.priority_label %}{% endcomment %}
+{% if priority == 'low' %}
+  <span class="badge bg-success">{{ label }}</span>
+{% elif priority == 'medium' %}
+  <span class="badge bg-warning text-dark">{{ label }}</span>
+{% elif priority == 'high' %}
+  <span class="badge badge-orange">{{ label }}</span>
+{% elif priority == 'critical' %}
+  <span class="badge bg-danger">{{ label }}</span>
+{% endif %}

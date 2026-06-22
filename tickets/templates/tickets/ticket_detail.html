@@ -1,0 +1,186 @@
+{% extends 'base.html' %}
+{% block title %}Заявка #{{ ticket.pk }} — HelpDesk{% endblock %}
+
+{% block content %}
+<div class="d-flex align-items-center mb-3">
+  <a href="{% url 'ticket_list' %}" class="btn btn-sm btn-outline-secondary me-3">
+    <i class="bi bi-arrow-left"></i>
+  </a>
+  <h5 class="mb-0">Заявка #{{ ticket.pk }}</h5>
+  {% if ticket.is_overdue %}
+    <span class="badge bg-danger ms-2"><i class="bi bi-exclamation-triangle me-1"></i>Просрочена</span>
+  {% endif %}
+</div>
+
+<div class="row g-3">
+
+  <div class="col-lg-8">
+
+    <div class="card mb-3">
+      <div class="card-body">
+        <h5 class="card-title mb-1">{{ ticket.subject }}</h5>
+        <div class="d-flex gap-2 mb-3 flex-wrap">
+          {% include 'tickets/_status_badge.html' with status=ticket.status label=ticket.status_label %}
+          {% include 'tickets/_priority_badge.html' with priority=ticket.priority label=ticket.priority_label %}
+          <span class="badge bg-light text-dark border">{{ ticket.category }}</span>
+        </div>
+        <p class="text-muted mb-3" style="white-space:pre-wrap">{{ ticket.description }}</p>
+        <div class="row text-muted small g-2">
+          <div class="col-sm-4">
+            <div class="section-title">Создал</div>
+            <i class="bi bi-person me-1"></i>{{ ticket.created_by.username }}
+          </div>
+          <div class="col-sm-4">
+            <div class="section-title">Исполнитель</div>
+            {% if ticket.assigned_to %}
+              <i class="bi bi-person-fill me-1"></i>{{ ticket.assigned_to.username }}
+            {% else %}
+              <span class="text-muted">Не назначен</span>
+            {% endif %}
+          </div>
+          <div class="col-sm-4">
+            <div class="section-title">Дедлайн</div>
+            <span class="{% if ticket.is_overdue %}text-danger fw-bold{% endif %}">
+              <i class="bi bi-clock me-1"></i>{{ ticket.deadline|date:"d.m.Y H:i" }}
+            </span>
+          </div>
+          <div class="col-sm-4 mt-2">
+            <div class="section-title">Создана</div>
+            {{ ticket.created_at|date:"d.m.Y H:i" }}
+          </div>
+          <div class="col-sm-4 mt-2">
+            <div class="section-title">Обновлена</div>
+            {{ ticket.updated_at|date:"d.m.Y H:i" }}
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-body">
+        <h6 class="mb-3"><i class="bi bi-chat-left-text me-2"></i>Комментарии ({{ comments|length }})</h6>
+
+        {% for comment in comments %}
+        <div class="comment-bubble {% if comment.author == request.user %}own{% endif %}">
+          <div class="d-flex justify-content-between align-items-center mb-1">
+            <span class="fw-semibold small">
+              <i class="bi bi-person-circle me-1"></i>{{ comment.author.username }}
+            </span>
+            <span class="text-muted" style="font-size:.75rem">{{ comment.created_at|date:"d.m.Y H:i" }}</span>
+          </div>
+          <div style="white-space:pre-wrap">{{ comment.text }}</div>
+        </div>
+        {% empty %}
+        <p class="text-muted text-center py-3">Комментариев пока нет</p>
+        {% endfor %}
+
+        <hr class="my-3">
+        <div class="section-title">Добавить комментарий</div>
+        <form method="post" action="{% url 'add_comment' ticket.pk %}">
+          {% csrf_token %}
+          {{ comment_form.text }}
+          {% for error in comment_form.text.errors %}
+            <div class="text-danger small">{{ error }}</div>
+          {% endfor %}
+          <button type="submit" class="btn btn-outline-primary btn-sm mt-2">
+            <i class="bi bi-send me-1"></i>Отправить
+          </button>
+        </form>
+      </div>
+    </div>
+
+  </div>{# end left col #}
+
+  <div class="col-lg-4">
+
+    {% if is_agent %}
+
+    <div class="card mb-3">
+      <div class="card-body">
+        <div class="section-title mb-2">Сменить статус</div>
+        {% if ticket.allowed_next_statuses %}
+          {% for status_code, status_label in ticket.allowed_next_statuses %}
+            <form method="post" action="{% url 'change_status' ticket.pk status_code %}" class="d-inline mb-1">
+              {% csrf_token %}
+              {% if status_code == 'in_progress' %}
+                <button type="submit" class="btn btn-sm btn-info text-dark mb-1">
+                  <i class="bi bi-play-fill me-1"></i>{{ status_label }}
+                </button>
+              {% elif status_code == 'waiting' %}
+                <button type="submit" class="btn btn-sm btn-warning text-dark mb-1">
+                  <i class="bi bi-pause-fill me-1"></i>{{ status_label }}
+                </button>
+              {% elif status_code == 'resolved' %}
+                <button type="submit" class="btn btn-sm btn-success mb-1">
+                  <i class="bi bi-check-lg me-1"></i>{{ status_label }}
+                </button>
+              {% elif status_code == 'closed' %}
+                <button type="submit" class="btn btn-sm btn-secondary mb-1">
+                  <i class="bi bi-x-lg me-1"></i>{{ status_label }}
+                </button>
+              {% else %}
+                <button type="submit" class="btn btn-sm btn-outline-primary mb-1">{{ status_label }}</button>
+              {% endif %}
+            </form>
+          {% endfor %}
+        {% else %}
+          <p class="text-muted small mb-0">Нет доступных переходов</p>
+        {% endif %}
+      </div>
+    </div>
+
+    <div class="card mb-3">
+      <div class="card-body">
+        <div class="section-title mb-2">Назначить исполнителя</div>
+        <form method="post" action="{% url 'assign_ticket' ticket.pk %}">
+          {% csrf_token %}
+          {{ assign_form.assigned_to }}
+          <div class="d-flex gap-2 mt-2">
+            <button type="submit" class="btn btn-sm btn-primary flex-grow-1">
+              <i class="bi bi-person-check me-1"></i>Назначить
+            </button>
+            {# Quick self-assign #}
+            <a href="#" onclick="
+              document.querySelector('[name=assigned_to]').value='{{ request.user.pk }}';
+              this.closest('form').submit(); return false;"
+              class="btn btn-sm btn-outline-secondary">Себе</a>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-body">
+        <div class="section-title mb-2">Приоритет и дедлайн</div>
+        <form method="post" action="{% url 'update_ticket' ticket.pk %}">
+          {% csrf_token %}
+          <div class="mb-2">
+            <label class="form-label small mb-1">Приоритет</label>
+            {{ update_form.priority }}
+          </div>
+          <div class="mb-2">
+            <label class="form-label small mb-1">Дедлайн</label>
+            {{ update_form.deadline }}
+          </div>
+          <button type="submit" class="btn btn-sm btn-outline-primary w-100 mt-1">
+            <i class="bi bi-pencil me-1"></i>Сохранить
+          </button>
+        </form>
+      </div>
+    </div>
+
+    {% else %}
+    <div class="card">
+      <div class="card-body text-muted small">
+        <i class="bi bi-info-circle me-1"></i>
+        Управление заявкой доступно только агентам поддержки.
+        <hr>
+        <div class="section-title">Статус</div>
+        {% include 'tickets/_status_badge.html' with status=ticket.status label=ticket.status_label %}
+      </div>
+    </div>
+    {% endif %}
+
+  </div>{# end right col #}
+</div>
+{% endblock %}

@@ -1,0 +1,14 @@
+{% comment %}Usage: {% include 'tickets/_status_badge.html' with status=ticket.status label=ticket.status_label %}{% endcomment %}
+{% if status == 'new' %}
+  <span class="badge bg-primary status-badge">{{ label }}</span>
+{% elif status == 'in_progress' %}
+  <span class="badge bg-info text-dark status-badge">{{ label }}</span>
+{% elif status == 'waiting' %}
+  <span class="badge bg-warning text-dark status-badge">{{ label }}</span>
+{% elif status == 'resolved' %}
+  <span class="badge bg-success status-badge">{{ label }}</span>
+{% elif status == 'closed' %}
+  <span class="badge bg-secondary status-badge">{{ label }}</span>
+{% else %}
+  <span class="badge bg-light text-dark status-badge">{{ label }}</span>
+{% endif %}
